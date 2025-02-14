@@ -45,7 +45,7 @@ public class Program {
                 {
                     //await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
                     //await message.AddReactionAsync(new Emoji("✅"));
-                    await message.Author.SendMessageAsync("I have updated your wishlist");
+                    await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
                     await message.DeleteAsync();
                 }
                 else
