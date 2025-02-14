@@ -25,7 +25,9 @@ public class Program {
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
         await DiscordBotClient.StartAsync();
 
-       //Thread.Sleep(5000);
+        Thread.Sleep(5000);
+
+        //await ReplyToSpecificMessage(840082901890629644, 1339838935320231957, "https://tenor.com/view/scooby-doo-cheater-are-you-cheating-on-me-mystery-incorporated-gif-27006179");
 
         //await JoinAndLeaveVoiceChannel(933433126200443001);
 
@@ -81,7 +83,7 @@ public class Program {
                 }
                 else
                 {
-                    await message.Author.SendMessageAsync("You did not send a valid droptimizer");
+                    await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
                     await message.DeleteAsync();
                     //await ((SocketUserMessage)message).ReplyAsync($"You did not send a valid droptimizer you fucking IDIOT. {errors}");
                     //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/idiots-idiot-no-intelligent-life-buzz-lightyear-toy-story-gif-12637964375483433713");
@@ -119,5 +121,25 @@ public class Program {
     {
         Console.WriteLine(msg.ToString());
         return Task.CompletedTask;
+    }
+
+    public static async Task ReplyToSpecificMessage(ulong channelId, ulong messageId, string replyContent)
+    {
+        var channel = await DiscordBotClient.GetChannelAsync(channelId) as SocketTextChannel;
+        // Fetch the message by ID
+        var message = await channel.GetMessageAsync(messageId) as IUserMessage;
+
+        if (message != null)
+        {
+            // Create a message reference to reply to the specific message
+            var reference = new MessageReference(message.Id);
+
+            // Reply to the message with the specified content
+            await channel.SendMessageAsync(text: replyContent, messageReference: reference);
+        }
+        else
+        {
+            Console.WriteLine("Message not found!");
+        }
     }
 }
