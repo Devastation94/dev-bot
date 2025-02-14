@@ -4,6 +4,8 @@ using dev_refined.Clients;
 using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using Quartz;
+using Quartz.Impl;
 using Serilog;
 using System.Text.RegularExpressions;
 
@@ -29,8 +31,9 @@ public class Program {
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
         var raidBotsUrls = ExtractUrls(message.Content);
+        var wowAudit = AppSettings.WoWAudit.FirstOrDefault(wa => wa.ChannelId == message.Channel.Id);
 
-        if (message.Channel.Id == AppSettings.DroptimizerChannelId && !message.Author.IsBot)
+        if (wowAudit != null && !message.Author.IsBot)
         {
             var validDroptimizers = false;
 
@@ -38,7 +41,7 @@ public class Program {
             {
                 foreach (var raidBotsUrl in raidBotsUrls)
                 {
-                    validDroptimizers = await WoWAuditClient.UpdateWishlist(message.Content.Split('/').Last());
+                    validDroptimizers = await WoWAuditClient.UpdateWishlist(message.Content.Split('/').Last(), wowAudit.Guild);
                 }
 
                 if (validDroptimizers)
