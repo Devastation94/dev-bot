@@ -25,7 +25,29 @@ public class Program {
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
         await DiscordBotClient.StartAsync();
 
+       //Thread.Sleep(5000);
+
+        //await JoinAndLeaveVoiceChannel(933433126200443001);
+
         await Task.Delay(-1);
+    }
+
+    public static async Task JoinAndLeaveVoiceChannel(ulong channelId)
+    {
+        var channel = DiscordBotClient.GetChannel(channelId) as SocketVoiceChannel;
+        if (channel == null)
+        {
+            Console.WriteLine("Voice channel not found.");
+            return;
+        }
+
+        var audioClient = await channel.ConnectAsync(); // Join the voice channel
+        Console.WriteLine($"Joined voice channel: {channel.Name}");
+
+        await Task.Delay(5000); // Stay in channel for 5 seconds (adjust as needed)
+
+        await audioClient.StopAsync(); // Proper way to leave
+        Console.WriteLine("Disconnected from voice channel.");
     }
 
     public static async Task MonitorDroptimizers(SocketMessage message)
@@ -52,16 +74,16 @@ public class Program {
 
                 if (validDroptimizers)
                 {
-                    await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
-                    //await message.AddReactionAsync(new Emoji("✅"));
-                    //await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
+                    //await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
+                    await message.AddReactionAsync(new Emoji("✅"));
+                    await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
                    // await message.DeleteAsync();
                 }
                 else
                 {
-                   // await message.Author.SendMessageAsync("You did not send a valid droptimizer");
-                   // await message.DeleteAsync();
-                    await ((SocketUserMessage)message).ReplyAsync($"You did not send a valid droptimizer you fucking IDIOT. {errors}");
+                    await message.Author.SendMessageAsync("You did not send a valid droptimizer");
+                    await message.DeleteAsync();
+                    //await ((SocketUserMessage)message).ReplyAsync($"You did not send a valid droptimizer you fucking IDIOT. {errors}");
                     //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/idiots-idiot-no-intelligent-life-buzz-lightyear-toy-story-gif-12637964375483433713");
                     // await message.AddReactionAsync(new Emoji("❌"));
                 }
