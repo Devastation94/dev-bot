@@ -29,7 +29,7 @@ public class Program {
 
         //await ReplyToSpecificMessage(840082901890629644, 1339838935320231957, "https://tenor.com/view/scooby-doo-cheater-are-you-cheating-on-me-mystery-incorporated-gif-27006179");
 
-        //await JoinAndLeaveVoiceChannel(933433126200443001);
+        await JoinAndLeaveVoiceChannel(933433126200443001);
 
         await Task.Delay(-1);
     }
@@ -46,10 +46,10 @@ public class Program {
         var audioClient = await channel.ConnectAsync(); // Join the voice channel
         Console.WriteLine($"Joined voice channel: {channel.Name}");
 
-        await Task.Delay(5000); // Stay in channel for 5 seconds (adjust as needed)
+        //await Task.Delay(5000); // Stay in channel for 5 seconds (adjust as needed)
 
-        await audioClient.StopAsync(); // Proper way to leave
-        Console.WriteLine("Disconnected from voice channel.");
+        //await audioClient.StopAsync(); // Proper way to leave
+        //Console.WriteLine("Disconnected from voice channel.");
     }
 
     public static async Task MonitorDroptimizers(SocketMessage message)
