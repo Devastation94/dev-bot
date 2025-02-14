@@ -35,6 +35,10 @@ public class Program {
             {
                 await message.AddReactionAsync(new Emoji("✅"));
             }
+            else
+            {
+                await message.AddReactionAsync(new Emoji("❌"));
+            }
         }
     }
 
