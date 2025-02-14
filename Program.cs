@@ -68,7 +68,11 @@ public class Program {
             }
             else
             {
-                await message.DeleteAsync();
+                if (!((SocketGuildUser)message.Author).GuildPermissions.Administrator)
+                {
+                    await message.DeleteAsync();
+                }
+               
                 //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/cat-meme-flying-cat-fling-shut-up-gif-8931012358356675065");
                 //await ((SocketUserMessage)message).ReplyAsync("This channel is for droptimizers only. Do not YAP.");
             }
