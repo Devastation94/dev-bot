@@ -3,25 +3,24 @@ using dev_library.Data;
 using dev_refined.Clients;
 using Discord;
 using Discord.WebSocket;
-using Newtonsoft.Json;
-using Quartz;
-using Quartz.Impl;
-using Serilog;
 using System.Text.RegularExpressions;
 
-public class Program {
+public class Program
+{
     private static DiscordSocketClient DiscordBotClient;
     private static WoWAuditClient WoWAuditClient = new();
 
     public static async Task Main()
     {
-        var discordConfig = new DiscordSocketConfig();
-        discordConfig.GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent;
+        var discordConfig = new DiscordSocketConfig
+        {
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+        };
         DiscordBotClient = new DiscordSocketClient(discordConfig);
         AppSettings.Initialize();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorDroptimizers;
-        
+
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
         await DiscordBotClient.StartAsync();
 
@@ -78,8 +77,8 @@ public class Program {
                 {
                     //await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
                     await message.AddReactionAsync(new Emoji("✅"));
-                   // await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
-                   // await message.DeleteAsync();
+                    // await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
+                    // await message.DeleteAsync();
                 }
                 else
                 {
@@ -96,7 +95,7 @@ public class Program {
                 {
                     await message.DeleteAsync();
                 }
-               
+
                 //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/cat-meme-flying-cat-fling-shut-up-gif-8931012358356675065");
                 //await ((SocketUserMessage)message).ReplyAsync("This channel is for droptimizers only. Do not YAP.");
             }
@@ -105,10 +104,10 @@ public class Program {
 
     static List<string> ExtractUrls(string text)
     {
-        var pattern  = @"https:\/\/(www\.raidbots\.com\/simbot\/report|questionablyepic\.com\/live\/upgradereport)[^\s]*";
+        var pattern = @"https:\/\/(www\.raidbots\.com\/simbot\/report|questionablyepic\.com\/live\/upgradereport)[^\s]*";
         var matches = Regex.Matches(text, pattern);
 
-        List<string> urls = new List<string>();
+       var urls = new List<string>();
         foreach (Match match in matches)
         {
             urls.Add(match.Value);
