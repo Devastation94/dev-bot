@@ -25,11 +25,11 @@ public class Program {
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
         await DiscordBotClient.StartAsync();
 
-        Thread.Sleep(5000);
+        //Thread.Sleep(5000);
 
-        //await ReplyToSpecificMessage(840082901890629644, 1339838935320231957, "https://tenor.com/view/scooby-doo-cheater-are-you-cheating-on-me-mystery-incorporated-gif-27006179");
+        //await ReplyToSpecificMessage(840082901890629644, 1340060583533346908, "https://tenor.com/view/who-cares-gif-24186436");
 
-        await JoinAndLeaveVoiceChannel(933433126200443001);
+        //await JoinAndLeaveVoiceChannel(933433126200443001);
 
         await Task.Delay(-1);
     }
@@ -78,7 +78,7 @@ public class Program {
                 {
                     //await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
                     await message.AddReactionAsync(new Emoji("✅"));
-                    await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
+                   // await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
                    // await message.DeleteAsync();
                 }
                 else
