@@ -5,6 +5,7 @@ using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 using Serilog;
+using System.Text.RegularExpressions;
 
 public class Program {
     private static DiscordSocketClient DiscordBotClient;
@@ -27,19 +28,56 @@ public class Program {
 
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
-        if (message.Channel.Id == AppSettings.DroptimizerChannelId && !message.Author.IsBot && message.Content.StartsWith("https://www.raidbots.com/simbot/report/"))
-        {
-            var updatedWishlist = await WoWAuditClient.UpdateWishlist(message.Content.Split('/').Last());
+        var raidBotsUrls = ExtractUrls(message.Content);
 
-            if (updatedWishlist)
+        if (message.Channel.Id == AppSettings.DroptimizerChannelId && !message.Author.IsBot)
+        {
+            var validDroptimizers = false;
+
+            if (raidBotsUrls.Count > 0)
             {
-                await message.AddReactionAsync(new Emoji("✅"));
+                foreach (var raidBotsUrl in raidBotsUrls)
+                {
+                    validDroptimizers = await WoWAuditClient.UpdateWishlist(message.Content.Split('/').Last());
+                }
+
+                if (validDroptimizers)
+                {
+                    //await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
+                    //await message.AddReactionAsync(new Emoji("✅"));
+                    await message.Author.SendMessageAsync("I have updated your wishlist");
+                    await message.DeleteAsync();
+                }
+                else
+                {
+                    await message.Author.SendMessageAsync("You did not send a valid droptimizer");
+                    await message.DeleteAsync();
+                    //await ((SocketUserMessage)message).ReplyAsync("You did not send a valid droptimizer you fucking retard");
+                    //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/idiots-idiot-no-intelligent-life-buzz-lightyear-toy-story-gif-12637964375483433713");
+                    // await message.AddReactionAsync(new Emoji("❌"));
+                }
             }
             else
             {
-                await message.AddReactionAsync(new Emoji("❌"));
+                await message.DeleteAsync();
+                //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/cat-meme-flying-cat-fling-shut-up-gif-8931012358356675065");
+                //await ((SocketUserMessage)message).ReplyAsync("This channel is for droptimizers only. Do not YAP.");
             }
         }
+    }
+
+    static List<string> ExtractUrls(string text)
+    {
+        var pattern  = @"https:\/\/www\.raidbots\.com\/simbot\/report\/[^\s]+";
+        var matches = Regex.Matches(text, pattern);
+
+        List<string> urls = new List<string>();
+        foreach (Match match in matches)
+        {
+            urls.Add(match.Value);
+        }
+
+        return urls;
     }
 
     private static Task Log(LogMessage msg)
