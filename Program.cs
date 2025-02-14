@@ -36,26 +36,32 @@ public class Program {
         if (wowAudit != null && !message.Author.IsBot)
         {
             var validDroptimizers = false;
+            var errors = string.Empty;
 
             if (raidBotsUrls.Count > 0)
             {
                 foreach (var raidBotsUrl in raidBotsUrls)
                 {
-                    validDroptimizers = await WoWAuditClient.UpdateWishlist(message.Content.Split('/').Last(), wowAudit.Guild);
+                    var response = await WoWAuditClient.UpdateWishlist(message.Content.Split('/').Last(), wowAudit.Guild);
+                    validDroptimizers = bool.Parse(response.Created);
+                    if (response.Base != null)
+                    {
+                        errors += response.Base[0];
+                    }
                 }
 
                 if (validDroptimizers)
                 {
-                    //await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
+                    await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
                     //await message.AddReactionAsync(new Emoji("✅"));
-                    await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
-                    await message.DeleteAsync();
+                    //await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
+                   // await message.DeleteAsync();
                 }
                 else
                 {
-                    await message.Author.SendMessageAsync("You did not send a valid droptimizer");
-                    await message.DeleteAsync();
-                    //await ((SocketUserMessage)message).ReplyAsync("You did not send a valid droptimizer you fucking retard");
+                   // await message.Author.SendMessageAsync("You did not send a valid droptimizer");
+                   // await message.DeleteAsync();
+                    await ((SocketUserMessage)message).ReplyAsync($"You did not send a valid droptimizer you fucking IDIOT. {errors}");
                     //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/idiots-idiot-no-intelligent-life-buzz-lightyear-toy-story-gif-12637964375483433713");
                     // await message.AddReactionAsync(new Emoji("❌"));
                 }
