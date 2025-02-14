@@ -77,7 +77,7 @@ public class Program {
 
     static List<string> ExtractUrls(string text)
     {
-        var pattern  = @"https:\/\/www\.raidbots\.com\/simbot\/report\/[^\s]+";
+        var pattern  = @"https:\/\/(www\.raidbots\.com\/simbot\/report|questionablyepic\.com\/live\/upgradereport)[^\s]*";
         var matches = Regex.Matches(text, pattern);
 
         List<string> urls = new List<string>();
