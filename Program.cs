@@ -86,7 +86,7 @@ public class Program
             {
                 foreach (var raidBotsUrl in raidBotsUrls)
                 {
-                    var response = await WoWAuditClient.UpdateWishlist(message.Content.Split('/').Last(), wowAudit.Guild);
+                    var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
                     validDroptimizers = bool.Parse(response.Created);
                     if (response.Base != null)
                     {
@@ -119,7 +119,7 @@ public class Program
         var pattern = @"https:\/\/(www\.raidbots\.com\/simbot\/report|questionablyepic\.com\/live\/upgradereport)[^\s]*";
         var matches = Regex.Matches(text, pattern);
 
-       var urls = new List<string>();
+        var urls = new List<string>();
         foreach (Match match in matches)
         {
             urls.Add(match.Value);
