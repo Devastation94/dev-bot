@@ -19,7 +19,7 @@ public class Program
         DiscordBotClient = new DiscordSocketClient(discordConfig);
         AppSettings.Initialize();
         DiscordBotClient.Log += Log;
-        DiscordBotClient.MessageReceived += MonitorDroptimizers;
+        DiscordBotClient.MessageReceived += MonitorMessages;
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
         await DiscordBotClient.StartAsync();
@@ -51,12 +51,33 @@ public class Program
         //Console.WriteLine("Disconnected from voice channel.");
     }
 
+    public static async Task MonitorMessages(SocketMessage message)
+    {
+        // Raidbots messages
+        if (AppSettings.WoWAudit.Any(wa => wa.ChannelId == message.Channel.Id))
+        {
+            await MonitorDroptimizers(message);
+        }
+        // Application messages
+
+    }
+
+    public static async Task MonitorApplications(SocketUserMessage message)
+    {
+        var guild = ((SocketGuildChannel)message.Channel).Guild;
+
+        if (message.Author.IsBot)
+        {
+            var test = await guild.CreateTextChannelAsync("reserved/test");
+        }
+    }
+
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
         var raidBotsUrls = ExtractUrls(message.Content);
-        var wowAudit = AppSettings.WoWAudit.FirstOrDefault(wa => wa.ChannelId == message.Channel.Id);
+        var wowAudit = AppSettings.WoWAudit.First(wa => wa.ChannelId == message.Channel.Id);
 
-        if (wowAudit != null && !message.Author.IsBot)
+        if (!message.Author.IsBot)
         {
             var validDroptimizers = false;
             var errors = string.Empty;
@@ -75,18 +96,12 @@ public class Program
 
                 if (validDroptimizers)
                 {
-                    //await ((SocketUserMessage)message).ReplyAsync("I have updated your wishlist pookie.");
                     await message.AddReactionAsync(new Emoji("✅"));
-                    // await message.Author.SendMessageAsync("I have updated your [wishlist](https://wowaudit.com/us/zuljin/refined/main/wishlists/personal).");
-                    // await message.DeleteAsync();
                 }
                 else
                 {
                     await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
                     await message.DeleteAsync();
-                    //await ((SocketUserMessage)message).ReplyAsync($"You did not send a valid droptimizer you fucking IDIOT. {errors}");
-                    //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/idiots-idiot-no-intelligent-life-buzz-lightyear-toy-story-gif-12637964375483433713");
-                    // await message.AddReactionAsync(new Emoji("❌"));
                 }
             }
             else
@@ -95,9 +110,6 @@ public class Program
                 {
                     await message.DeleteAsync();
                 }
-
-                //await ((SocketUserMessage)message).ReplyAsync("https://tenor.com/view/cat-meme-flying-cat-fling-shut-up-gif-8931012358356675065");
-                //await ((SocketUserMessage)message).ReplyAsync("This channel is for droptimizers only. Do not YAP.");
             }
         }
     }
