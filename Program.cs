@@ -15,7 +15,7 @@ public class Program
     private static GoogleSheetsClient GoogleSheetsClient;
     private static string SoundFile = "C:/Users/Devastation/Documents/Memes/snickers.mp3";       // Replace with the sound file path
     private static ulong ChannelToJoinId = 933433126200443001;
-    private static ulong UserToStalkId = 221473784174084097;
+    private static ulong UserToStalkId = 178295063808311297;
 
     public static async Task Main()
     {
@@ -27,7 +27,7 @@ public class Program
         AppSettings.Initialize();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
-        DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
+       // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         GoogleSheetsClient = new GoogleSheetsClient();
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
@@ -35,23 +35,29 @@ public class Program
 
         //await ReplyToSpecificMessage(840082901890629644, 1340060583533346908, "https://tenor.com/view/who-cares-gif-24186436");
 
+        //Thread.Sleep(5000);
+
         //await JoinAndLeaveVoiceChannel(ChannelToJoinId);
 
-        await GoogleSheetsClient.UpdateSheet(await RaidBotsClient.GetItemUpgrades(""));
+        //await GoogleSheetsClient.UpdateSheet(await RaidBotsClient.GetItemUpgrades(""));
 
         await Task.Delay(-1);
     }
 
     private static async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
-        if (user.Id == UserToStalkId && after.VoiceChannel?.Id == ChannelToJoinId)
+        if (user.Id == UserToStalkId)
         {
-            Console.WriteLine($"{user.Username} joined the target channel!");
+            var voiceChannel = user as SocketGuildUser;
+            var channel = DiscordBotClient.GetChannel(voiceChannel.VoiceChannel.Id) as SocketVoiceChannel;
+            if (channel == null)
+            {
+                Console.WriteLine("Voice channel not found.");
+                return;
+            }
 
-            var audioClient = await before.VoiceChannel.ConnectAsync(); // Join the voice channel
-            Console.WriteLine($"Joined voice channel: {before.VoiceChannel.Name}");
-
-            Thread.Sleep(2000);
+            var audioClient = await channel.ConnectAsync(); // Join the voice channel
+            Console.WriteLine($"Joined voice channel: {channel.Name}");
 
             await PlaySound(audioClient);
 
@@ -106,7 +112,8 @@ public class Program
 
         if (!message.Author.IsBot)
         {
-            var validDroptimizers = false;
+            var validWoWAuditReport = false;
+            var validGoogleSheetsReport = false;
             var errors = string.Empty;
 
             if (raidBotsUrls.Count > 0)
@@ -114,14 +121,23 @@ public class Program
                 foreach (var raidBotsUrl in raidBotsUrls)
                 {
                     var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
-                    validDroptimizers = bool.Parse(response.Created);
+                    validWoWAuditReport = bool.Parse(response.Created);
                     if (response.Base != null)
                     {
                         errors += response.Base[0];
                     }
+
+                    validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
+
+                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport)
+                    {
+                        var itemUpgrades = await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last());
+                       
+                        validGoogleSheetsReport = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
+                    }
                 }
 
-                if (validDroptimizers)
+                if (validWoWAuditReport || validGoogleSheetsReport)
                 {
                     await message.AddReactionAsync(new Emoji("✅"));
                 }
@@ -193,7 +209,7 @@ public class Program
             StartInfo = new ProcessStartInfo
             {
                 FileName = "ffmpeg",
-                Arguments = $"-i \"{SoundFile}\" -filter:a \"volume=0.5\" -ac 2 -f s16le -ar 48000 pipe:1",
+                Arguments = $"-i \"{SoundFile}\" -filter:a \"volume=1\" -ac 2 -f s16le -ar 48000 pipe:1",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
