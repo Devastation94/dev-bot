@@ -1,14 +1,21 @@
 ﻿
+using dev_library.Clients;
 using dev_library.Data;
 using dev_refined.Clients;
 using Discord;
+using Discord.Audio;
 using Discord.WebSocket;
-using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 public class Program
 {
     private static DiscordSocketClient DiscordBotClient;
     private static WoWAuditClient WoWAuditClient = new();
+    private static RaidBotsClient RaidBotsClient = new();
+    private static GoogleSheetsClient GoogleSheetsClient;
+    private static string SoundFile = "C:/Users/Devastation/Documents/Memes/snickers.mp3";       // Replace with the sound file path
+    private static ulong ChannelToJoinId = 933433126200443001;
+    private static ulong UserToStalkId = 221473784174084097;
 
     public static async Task Main()
     {
@@ -20,17 +27,37 @@ public class Program
         AppSettings.Initialize();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
+        DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
+        GoogleSheetsClient = new GoogleSheetsClient();
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
         await DiscordBotClient.StartAsync();
 
-        //Thread.Sleep(5000);
-
         //await ReplyToSpecificMessage(840082901890629644, 1340060583533346908, "https://tenor.com/view/who-cares-gif-24186436");
 
-        //await JoinAndLeaveVoiceChannel(933433126200443001);
+        //await JoinAndLeaveVoiceChannel(ChannelToJoinId);
+
+        await GoogleSheetsClient.UpdateSheet(await RaidBotsClient.GetItemUpgrades(""));
 
         await Task.Delay(-1);
+    }
+
+    private static async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
+    {
+        if (user.Id == UserToStalkId && after.VoiceChannel?.Id == ChannelToJoinId)
+        {
+            Console.WriteLine($"{user.Username} joined the target channel!");
+
+            var audioClient = await before.VoiceChannel.ConnectAsync(); // Join the voice channel
+            Console.WriteLine($"Joined voice channel: {before.VoiceChannel.Name}");
+
+            Thread.Sleep(2000);
+
+            await PlaySound(audioClient);
+
+            await audioClient.StopAsync(); // Proper way to leave
+            Console.WriteLine("Disconnected from voice channel.");
+        }
     }
 
     public static async Task JoinAndLeaveVoiceChannel(ulong channelId)
@@ -45,10 +72,10 @@ public class Program
         var audioClient = await channel.ConnectAsync(); // Join the voice channel
         Console.WriteLine($"Joined voice channel: {channel.Name}");
 
-        //await Task.Delay(5000); // Stay in channel for 5 seconds (adjust as needed)
+        await PlaySound(audioClient);
 
-        //await audioClient.StopAsync(); // Proper way to leave
-        //Console.WriteLine("Disconnected from voice channel.");
+        await audioClient.StopAsync(); // Proper way to leave
+        Console.WriteLine("Disconnected from voice channel.");
     }
 
     public static async Task MonitorMessages(SocketMessage message)
@@ -74,7 +101,7 @@ public class Program
 
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
-        var raidBotsUrls = ExtractUrls(message.Content);
+        var raidBotsUrls = Helpers.ExtractUrls(message.Content);
         var wowAudit = AppSettings.WoWAudit.First(wa => wa.ChannelId == message.Channel.Id);
 
         if (!message.Author.IsBot)
@@ -114,19 +141,7 @@ public class Program
         }
     }
 
-    static List<string> ExtractUrls(string text)
-    {
-        var pattern = @"https:\/\/(www\.raidbots\.com\/simbot\/report|questionablyepic\.com\/live\/upgradereport)[^\s]*";
-        var matches = Regex.Matches(text, pattern);
 
-        var urls = new List<string>();
-        foreach (Match match in matches)
-        {
-            urls.Add(match.Value);
-        }
-
-        return urls;
-    }
 
     private static Task Log(LogMessage msg)
     {
@@ -152,5 +167,44 @@ public class Program
         {
             Console.WriteLine("Message not found!");
         }
+    }
+
+    private static async Task PlaySound(IAudioClient client)
+    {
+        using (var ffmpeg = CreateStream())
+        using (var output = ffmpeg.StandardOutput.BaseStream)
+        using (var discord = client.CreatePCMStream(AudioApplication.Voice))
+        {
+            try
+            {
+                await output.CopyToAsync(discord);
+            }
+            finally
+            {
+                await discord.FlushAsync();
+            }
+        }
+    }
+
+    private static Process CreateStream()
+    {
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = $"-i \"{SoundFile}\" -filter:a \"volume=0.5\" -ac 2 -f s16le -ar 48000 pipe:1",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.ErrorDataReceived += (sender, e) => Console.WriteLine($"FFmpeg Error: {e.Data}");
+        process.Start();
+        process.BeginErrorReadLine();
+
+        return process;
     }
 }
