@@ -145,11 +145,9 @@ public class Program
                         errors += response.Base[0];
                     }
 
-                    validWoWAuditReport = Constants.ERROR_MESSAGES.Any(em => !errors.Contains(em));
-
                     validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
 
-                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && validWoWAuditReport)
+                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && validWoWAuditReport && Constants.ERROR_MESSAGES.Any(em => !errors.Contains(em)))
                     {
                         var itemUpgrades = await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last());
 
