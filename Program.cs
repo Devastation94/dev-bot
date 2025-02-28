@@ -16,7 +16,7 @@ public class Program
     private static GoogleSheetsClient GoogleSheetsClient;
     private static string SoundFile = "C:/Users/Devastation/Documents/Memes/biden-bayaz.mp3";       // Replace with the sound file path
     private static ulong ChannelToJoinId = 933433126200443001;
-    private static ulong UserToStalkId = 178295063808311297;
+    private static ulong UserToStalkId = 221473784174084097;
 
     public static async Task Main()
     {
