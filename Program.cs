@@ -16,7 +16,7 @@ public class Program
     private static GoogleSheetsClient GoogleSheetsClient;
     private static string SoundFile = "C:/Users/Devastation/Documents/Memes/biden-bayaz.mp3";       // Replace with the sound file path
     private static ulong ChannelToJoinId = 933433126200443001;
-    private static ulong UserToStalkId = 221473784174084097;
+    private static ulong UserToStalkId = 178295063808311297;
 
     public static async Task Main()
     {
@@ -45,35 +45,52 @@ public class Program
         await Task.Delay(-1);
     }
 
-    private static async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
+    private static Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
-        if (user.Id != UserToStalkId) return; // Only track the specific user
+        _ = Task.Run(async () =>
+        {
+            await HandleUserVoiceStateUpdated(user, before, after);
+        });
+
+        return Task.CompletedTask;
+    }
+
+    private static async Task HandleUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
+    {
+        if (user.Id != UserToStalkId) return;
 
         var guildUser = user as SocketGuildUser;
-        if (guildUser == null || guildUser.VoiceChannel == null)
+        if (guildUser == null)
         {
-            Console.WriteLine("User left voice channel or is null.");
+            Console.WriteLine("User is not a guild member.");
             return;
         }
 
         var channel = guildUser.VoiceChannel;
-        Console.WriteLine($"User switched to: {channel.Name}");
+        if (channel == null)
+        {
+            Console.WriteLine("User left all voice channels.");
+            return;
+        }
 
         var botUser = channel.Guild.CurrentUser;
-        if (botUser.VoiceChannel == channel)
+        var existingConnection = botUser.VoiceChannel;
+
+        if (existingConnection != null)
         {
-            Console.WriteLine("Already in the target channel.");
-            return;
+            Console.WriteLine($"Bot is already in {existingConnection.Name}, disconnecting first.");
+            await existingConnection.DisconnectAsync();
+            await Task.Delay(1000); // Ensure disconnection completes
         }
 
         try
         {
-            var audioClient = await channel.ConnectAsync(); // Connect to voice
+            var audioClient = await channel.ConnectAsync();
             Console.WriteLine($"Joined voice channel: {channel.Name}");
 
-            await PlaySound(audioClient); // Play sound
+            await PlaySound(audioClient);
 
-            await audioClient.StopAsync(); // Leave channel properly
+            await audioClient.StopAsync();
             Console.WriteLine("Disconnected from voice channel.");
         }
         catch (Exception ex)
