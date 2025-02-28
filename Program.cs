@@ -2,6 +2,7 @@
 using dev_library.Clients;
 using dev_library.Data;
 using dev_refined.Clients;
+using dev_refined.Data;
 using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
@@ -27,7 +28,7 @@ public class Program
         AppSettings.Initialize();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
-       // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
+        // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         GoogleSheetsClient = new GoogleSheetsClient();
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
@@ -114,6 +115,7 @@ public class Program
         {
             var validWoWAuditReport = false;
             var validGoogleSheetsReport = false;
+            var uploadedToGoogleSheets = false;
             var errors = string.Empty;
 
             if (raidBotsUrls.Count > 0)
@@ -127,17 +129,19 @@ public class Program
                         errors += response.Base[0];
                     }
 
+                    validWoWAuditReport = Constants.ERROR_MESSAGES.Any(em => !errors.Contains(em));
+
                     validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
 
-                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport)
+                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && validWoWAuditReport)
                     {
                         var itemUpgrades = await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last());
-                       
-                        validGoogleSheetsReport = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
+
+                        uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
                     }
                 }
 
-                if (validWoWAuditReport || validGoogleSheetsReport)
+                if (string.IsNullOrWhiteSpace(errors) || uploadedToGoogleSheets)
                 {
                     await message.AddReactionAsync(new Emoji("✅"));
                 }
