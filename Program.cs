@@ -14,9 +14,9 @@ public class Program
     private static WoWAuditClient WoWAuditClient = new();
     private static RaidBotsClient RaidBotsClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
-    private static string SoundFile = "C:/Users/Devastation/Documents/Memes/snickers.mp3";       // Replace with the sound file path
+    private static string SoundFile = "C:/Users/Devastation/Documents/Memes/biden-bayaz.mp3";       // Replace with the sound file path
     private static ulong ChannelToJoinId = 933433126200443001;
-    private static ulong UserToStalkId = 178295063808311297;
+    private static ulong UserToStalkId = 221473784174084097;
 
     public static async Task Main()
     {
@@ -28,7 +28,7 @@ public class Program
         AppSettings.Initialize();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
-        // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
+        DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         GoogleSheetsClient = new GoogleSheetsClient();
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
@@ -47,25 +47,41 @@ public class Program
 
     private static async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
-        if (user.Id == UserToStalkId)
-        {
-            var voiceChannel = user as SocketGuildUser;
-            var channel = DiscordBotClient.GetChannel(voiceChannel.VoiceChannel.Id) as SocketVoiceChannel;
-            if (channel == null)
-            {
-                Console.WriteLine("Voice channel not found.");
-                return;
-            }
+        if (user.Id != UserToStalkId) return; // Only track the specific user
 
-            var audioClient = await channel.ConnectAsync(); // Join the voice channel
+        var guildUser = user as SocketGuildUser;
+        if (guildUser == null || guildUser.VoiceChannel == null)
+        {
+            Console.WriteLine("User left voice channel or is null.");
+            return;
+        }
+
+        var channel = guildUser.VoiceChannel;
+        Console.WriteLine($"User switched to: {channel.Name}");
+
+        var botUser = channel.Guild.CurrentUser;
+        if (botUser.VoiceChannel == channel)
+        {
+            Console.WriteLine("Already in the target channel.");
+            return;
+        }
+
+        try
+        {
+            var audioClient = await channel.ConnectAsync(); // Connect to voice
             Console.WriteLine($"Joined voice channel: {channel.Name}");
 
-            await PlaySound(audioClient);
+            await PlaySound(audioClient); // Play sound
 
-            await audioClient.StopAsync(); // Proper way to leave
+            await audioClient.StopAsync(); // Leave channel properly
             Console.WriteLine("Disconnected from voice channel.");
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error connecting to voice: {ex.Message}");
+        }
     }
+
 
     public static async Task JoinAndLeaveVoiceChannel(ulong channelId)
     {
