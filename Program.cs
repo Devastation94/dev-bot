@@ -14,7 +14,6 @@ public class Program
     private static WoWAuditClient WoWAuditClient = new();
     private static RaidBotsClient RaidBotsClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
-    private static string SoundFile = "C:/Users/Devastation/Documents/Memes/biden-bayaz.mp3";       // Replace with the sound file path
     private static ulong ChannelToJoinId = 933433126200443001;
     private static ulong UserToStalkId = 221473784174084097;
 
@@ -88,7 +87,7 @@ public class Program
             var audioClient = await channel.ConnectAsync();
             Console.WriteLine($"Joined voice channel: {channel.Name}");
 
-            await PlaySound(audioClient);
+            await PlaySound(audioClient, $"{AppSettings.BasePath}/biden-bayaz.mp3");
 
             await audioClient.StopAsync();
             Console.WriteLine("Disconnected from voice channel.");
@@ -100,23 +99,23 @@ public class Program
     }
 
 
-    public static async Task JoinAndLeaveVoiceChannel(ulong channelId)
-    {
-        var channel = DiscordBotClient.GetChannel(channelId) as SocketVoiceChannel;
-        if (channel == null)
-        {
-            Console.WriteLine("Voice channel not found.");
-            return;
-        }
+    //public static async Task JoinAndLeaveVoiceChannel(ulong channelId)
+    //{
+    //    var channel = DiscordBotClient.GetChannel(channelId) as SocketVoiceChannel;
+    //    if (channel == null)
+    //    {
+    //        Console.WriteLine("Voice channel not found.");
+    //        return;
+    //    }
 
-        var audioClient = await channel.ConnectAsync(); // Join the voice channel
-        Console.WriteLine($"Joined voice channel: {channel.Name}");
+    //    var audioClient = await channel.ConnectAsync(); // Join the voice channel
+    //    Console.WriteLine($"Joined voice channel: {channel.Name}");
 
-        await PlaySound(audioClient);
+    //    await PlaySound(audioClient);
 
-        await audioClient.StopAsync(); // Proper way to leave
-        Console.WriteLine("Disconnected from voice channel.");
-    }
+    //    await audioClient.StopAsync(); // Proper way to leave
+    //    Console.WriteLine("Disconnected from voice channel.");
+    //}
 
     public static async Task MonitorMessages(SocketMessage message)
     {
@@ -164,7 +163,7 @@ public class Program
 
                     validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
 
-                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && validWoWAuditReport && Constants.ERROR_MESSAGES.Any(em => !errors.Contains(em)))
+                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em)))
                     {
                         var itemUpgrades = await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last());
 
@@ -220,9 +219,9 @@ public class Program
         }
     }
 
-    private static async Task PlaySound(IAudioClient client)
+    private static async Task PlaySound(IAudioClient client, string filePath)
     {
-        using (var ffmpeg = CreateStream())
+        using (var ffmpeg = CreateStream(filePath))
         using (var output = ffmpeg.StandardOutput.BaseStream)
         using (var discord = client.CreatePCMStream(AudioApplication.Voice))
         {
@@ -237,14 +236,14 @@ public class Program
         }
     }
 
-    private static Process CreateStream()
+    private static Process CreateStream(string filePath)
     {
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = "ffmpeg",
-                Arguments = $"-i \"{SoundFile}\" -filter:a \"volume=1\" -ac 2 -f s16le -ar 48000 pipe:1",
+                Arguments = $"-i \"{filePath}\" -filter:a \"volume=1\" -ac 2 -f s16le -ar 48000 pipe:1",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
