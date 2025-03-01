@@ -15,7 +15,6 @@ public class Program
     private static RaidBotsClient RaidBotsClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
     private static ulong ChannelToJoinId = 933433126200443001;
-    private static ulong UserToStalkId = 735613960404992070;
 
     public static async Task Main()
     {
@@ -56,7 +55,7 @@ public class Program
 
     private static async Task HandleUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
-        if (user.Id != UserToStalkId) return;
+        if (user.Id != AppSettings.UserId) return;
 
         var guildUser = user as SocketGuildUser;
         if (guildUser == null)
