@@ -15,7 +15,7 @@ public class Program
     private static RaidBotsClient RaidBotsClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
     private static ulong ChannelToJoinId = 933433126200443001;
-    private static ulong UserToStalkId = 221473784174084097;
+    private static ulong UserToStalkId = 735613960404992070;
 
     public static async Task Main()
     {
@@ -87,7 +87,7 @@ public class Program
             var audioClient = await channel.ConnectAsync();
             Console.WriteLine($"Joined voice channel: {channel.Name}");
 
-            await PlaySound(audioClient, $"{AppSettings.BasePath}/biden-bayaz.mp3");
+            await PlaySound(audioClient, $"{AppSettings.BasePath}/obama-tony.mp3");
 
             await audioClient.StopAsync();
             Console.WriteLine("Disconnected from voice channel.");
@@ -190,8 +190,6 @@ public class Program
             }
         }
     }
-
-
 
     private static Task Log(LogMessage msg)
     {
