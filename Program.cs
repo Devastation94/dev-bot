@@ -26,7 +26,7 @@ public class Program
         AppSettings.Initialize();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
-        DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
+        //DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         GoogleSheetsClient = new GoogleSheetsClient();
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
