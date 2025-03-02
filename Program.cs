@@ -29,7 +29,7 @@ public class Program
         DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         GoogleSheetsClient = new GoogleSheetsClient();
 
-        await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.DiscordBotToken);
+        await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
         await DiscordBotClient.StartAsync();
 
         //await ReplyToSpecificMessage(840082901890629644, 1340060583533346908, "https://tenor.com/view/who-cares-gif-24186436");
@@ -55,7 +55,7 @@ public class Program
 
     private static async Task HandleUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
-        if (user.Id != AppSettings.UserId) return;
+        if (user.Id != AppSettings.Discord.UserId) return;
 
         var guildUser = user as SocketGuildUser;
         if (guildUser == null)
@@ -119,7 +119,7 @@ public class Program
     public static async Task MonitorMessages(SocketMessage message)
     {
         // Raidbots messages
-        if (AppSettings.WoWAudit.Any(wa => wa.ChannelId == message.Channel.Id))
+        if (AppSettings.WowAudit.Any(wa => wa.ChannelId == message.Channel.Id))
         {
             await MonitorDroptimizers(message);
         }
@@ -140,7 +140,7 @@ public class Program
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
         var raidBotsUrls = Helpers.ExtractUrls(message.Content);
-        var wowAudit = AppSettings.WoWAudit.First(wa => wa.ChannelId == message.Channel.Id);
+        var wowAudit = AppSettings.WowAudit.First(wa => wa.ChannelId == message.Channel.Id);
 
         if (!message.Author.IsBot)
         {
