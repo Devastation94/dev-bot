@@ -55,7 +55,7 @@ public class Program
 
     private static async Task HandleUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
-        if (user.Id != AppSettings.Discord.UserId) return;
+        if (user.Id != AppSettings.Discord.UserId || before.VoiceChannel != after.VoiceChannel) return;
 
         var guildUser = user as SocketGuildUser;
         if (guildUser == null)
