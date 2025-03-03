@@ -14,7 +14,7 @@ public class Program
     private static WoWAuditClient WoWAuditClient = new();
     private static RaidBotsClient RaidBotsClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
-    private static ulong ChannelToJoinId = 933433126200443001;
+    private static ulong ChannelToJoinId = 735613960404992070;
 
     public static async Task Main()
     {
