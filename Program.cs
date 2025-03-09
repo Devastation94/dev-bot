@@ -151,10 +151,14 @@ public class Program
 
             if (raidBotsUrls.Count > 0)
             {
+                Console.WriteLine($"Begin Processing reports");
+
                 try
                 {
                     foreach (var raidBotsUrl in raidBotsUrls)
                     {
+                        Console.WriteLine($"Processing {raidBotsUrl}");
+
                         var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
                         validWoWAuditReport = bool.Parse(response.Created);
                         if (response.Base != null)
