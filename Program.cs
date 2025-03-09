@@ -151,33 +151,43 @@ public class Program
 
             if (raidBotsUrls.Count > 0)
             {
-                foreach (var raidBotsUrl in raidBotsUrls)
+                try
                 {
-                    var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
-                    validWoWAuditReport = bool.Parse(response.Created);
-                    if (response.Base != null)
+                    foreach (var raidBotsUrl in raidBotsUrls)
                     {
-                        errors += response.Base[0];
+                        var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
+                        validWoWAuditReport = bool.Parse(response.Created);
+                        if (response.Base != null)
+                        {
+                            errors += response.Base[0];
+                        }
+
+                        validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
+
+                        if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em)))
+                        {
+                            var itemUpgrades = await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last());
+
+                            uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
+                        }
                     }
 
-                    validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
-
-                    if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em)))
+                    if (string.IsNullOrWhiteSpace(errors) || uploadedToGoogleSheets)
                     {
-                        var itemUpgrades = await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last());
-
-                        uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
+                        await message.AddReactionAsync(new Emoji("✅"));
+                    }
+                    else
+                    {
+                        await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
+                        await message.DeleteAsync();
                     }
                 }
-
-                if (string.IsNullOrWhiteSpace(errors) || uploadedToGoogleSheets)
+                catch (Exception ex)
                 {
-                    await message.AddReactionAsync(new Emoji("✅"));
-                }
-                else
-                {
-                    await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
-                    await message.DeleteAsync();
+                    await message.AddReactionAsync(new Emoji("❌"));
+                    await message.Author.SendMessageAsync("WoWAudit is currently down. Please try again later. Also compliment epic on his tuna can");
+                    Console.WriteLine(ex.Message);
+                    throw;
                 }
             }
             else
