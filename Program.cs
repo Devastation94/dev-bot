@@ -1,6 +1,7 @@
 ﻿
 using dev_library.Clients;
 using dev_library.Data;
+using dev_library.Data.WoW.Raidbots;
 using dev_refined.Clients;
 using dev_refined.Data;
 using Discord;
@@ -14,7 +15,7 @@ public class Program
     private static WoWAuditClient WoWAuditClient = new();
     private static RaidBotsClient RaidBotsClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
-    private static ulong ChannelToJoinId = 735613960404992070;
+    private static ulong ChannelToJoinId = 1344347126330560625;
 
     public static async Task Main()
     {
@@ -35,8 +36,6 @@ public class Program
         //await ReplyToSpecificMessage(840082901890629644, 1340060583533346908, "https://tenor.com/view/who-cares-gif-24186436");
 
         //Thread.Sleep(5000);
-
-        //await JoinAndLeaveVoiceChannel(ChannelToJoinId);
 
         //await GoogleSheetsClient.UpdateSheet(await RaidBotsClient.GetItemUpgrades(""));
 
@@ -155,6 +154,8 @@ public class Program
 
                 try
                 {
+                    var itemUpgrades = new List<ItemUpgrade>();
+
                     foreach (var raidBotsUrl in raidBotsUrls)
                     {
                         Console.WriteLine($"Processing {raidBotsUrl}");
@@ -170,10 +171,13 @@ public class Program
 
                         if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em)))
                         {
-                            var itemUpgrades = await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last());
-
-                            uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
+                            itemUpgrades.AddRange(await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last()));
                         }
+                    }
+
+                    if (itemUpgrades.Count > 0)
+                    {
+                        uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
                     }
 
                     if (string.IsNullOrWhiteSpace(errors) || uploadedToGoogleSheets)
