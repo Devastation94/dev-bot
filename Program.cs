@@ -8,6 +8,7 @@ using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
 using System.Diagnostics;
+using TimeZoneConverter;
 
 public class Program
 {
@@ -16,6 +17,7 @@ public class Program
     private static RaidBotsClient RaidBotsClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
     private static ulong ChannelToJoinId = 1344347126330560625;
+    private static Timer Timer;
 
     public static async Task Main()
     {
@@ -25,13 +27,14 @@ public class Program
         };
         DiscordBotClient = new DiscordSocketClient(discordConfig);
         AppSettings.Initialize();
+        GoogleSheetsClient = new GoogleSheetsClient();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
-       // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
-        GoogleSheetsClient = new GoogleSheetsClient();
+        // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
         await DiscordBotClient.StartAsync();
+        DiscordBotClient.Ready += OnReady;
 
         //await ReplyToSpecificMessage(840082901890629644, 1340060583533346908, "https://tenor.com/view/who-cares-gif-24186436");
 
@@ -40,6 +43,11 @@ public class Program
         //await GoogleSheetsClient.UpdateSheet(await RaidBotsClient.GetItemUpgrades(""));
 
         await Task.Delay(-1);
+    }
+
+    private static async Task OnReady()
+    {
+        CheckScheduleLoop();
     }
 
     private static Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
@@ -252,7 +260,7 @@ public class Program
     }
 
     private static Process CreateStream(string filePath)
-    {
+    { 
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -271,5 +279,29 @@ public class Program
         process.BeginErrorReadLine();
 
         return process;
+    }
+
+    private static async Task CheckScheduleLoop()
+    {
+        var eastern = TZConvert.GetTimeZoneInfo("Eastern Standard Time");
+
+        while (true)
+        {
+            var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
+            if (now.DayOfWeek == DayOfWeek.Monday && now.Hour == 17 && now.Minute == 00)
+            {
+                var channel = DiscordBotClient.GetChannel(1338053649531928587) as IMessageChannel;
+                if (channel != null)
+                {
+                    await channel.SendMessageAsync("@here Make sure to post droptimizers or you're not getting loot");
+                }
+
+                await Task.Delay(TimeSpan.FromMinutes(61)); // Skip past this hour
+            }
+            else
+            {
+                await Task.Delay(TimeSpan.FromMinutes(1)); // Check again in a minute
+            }
+        }
     }
 }
