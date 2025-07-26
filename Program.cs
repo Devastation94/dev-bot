@@ -47,7 +47,7 @@ public class Program
 
     private static async Task OnReady()
     {
-        CheckScheduleLoop();
+       CheckScheduleLoop();
     }
 
     private static Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
@@ -288,9 +288,9 @@ public class Program
         while (true)
         {
             var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
-            if (now.DayOfWeek == DayOfWeek.Monday && now.Hour == 17 && now.Minute == 00)
+            if (now.DayOfWeek == DayOfWeek.Tuesday && now.Hour == 17 && now.Minute == 00)
             {
-                var channel = DiscordBotClient.GetChannel(1338053649531928587) as IMessageChannel;
+                var channel = DiscordBotClient.GetChannel(1339754498549219329) as IMessageChannel;
                 if (channel != null)
                 {
                     await channel.SendMessageAsync("@here Make sure to post droptimizers or you're not getting loot");
