@@ -177,7 +177,7 @@ public class Program
 
                         validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
 
-                        if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport && !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em)))
+                        if (wowAudit.Guild == "REFINED" && (validGoogleSheetsReport || !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em))))
                         {
                             itemUpgrades.AddRange(await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last()));
                         }
