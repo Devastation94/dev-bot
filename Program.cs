@@ -179,7 +179,7 @@ public class Program
 
                         if (wowAudit.Guild == "REFINED" && (validGoogleSheetsReport || !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em))))
                         {
-                            itemUpgrades.AddRange(await RaidBotsClient.GetItemUpgrades(raidBotsUrl.Split('/').Last()));
+                            itemUpgrades = await RaidBotsClient.GetItemUpgrades(itemUpgrades, raidBotsUrl.Split('/').Last());
                         }
                     }
 
