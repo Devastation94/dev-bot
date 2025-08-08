@@ -197,6 +197,11 @@ public class Program
                         await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
                         await message.DeleteAsync();
                     }
+
+                    if (message.Author.Id == 285277811348996097)
+                    {
+                        await message.Author.SendMessageAsync("Pig");
+                    }
                 }
                 catch (Exception ex)
                 {
