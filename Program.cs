@@ -219,6 +219,7 @@ public class Program
             {
                 if (!((SocketGuildUser)message.Author).GuildPermissions.Administrator)
                 {
+                    Console.WriteLine(message.Content);
                     await message.DeleteAsync();
                 }
             }
