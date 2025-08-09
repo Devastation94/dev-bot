@@ -202,6 +202,10 @@ public class Program
                     {
                         await message.Author.SendMessageAsync("Pig");
                     }
+                    else if (message.Author.Id == 221473784174084097)
+                    {
+                        await message.Author.SendMessageAsync("Oink for me Piggie");
+                    }
                 }
                 catch (Exception ex)
                 {
