@@ -134,7 +134,7 @@ public class Program
         }
         if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
         {
-            var response = await AiClient.GetResponse($"Someone just messaged you \"{message.Content}\" act faero in your reply", 1);
+            var response = await AiClient.GetResponse(message.Content, 1);
             var mentioningUser = message.Author;
 
             await message.Channel.SendMessageAsync($"{mentioningUser.Mention} {response}");
