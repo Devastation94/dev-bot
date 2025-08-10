@@ -144,9 +144,9 @@ public class Program
                 return;
             }
 
-            var response = await AiClient.GetResponse(message.Content, 1);
+            var response = await AiClient.GetResponse($"{mentioningUser.Mention} said {message.Content}", 1);
 
-            await message.Channel.SendMessageAsync($"{mentioningUser.Mention} {response}");
+            await message.Channel.SendMessageAsync($"{response}");
         }
 
     }
