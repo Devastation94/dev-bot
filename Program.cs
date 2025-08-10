@@ -18,7 +18,9 @@ public class Program
     private static GoogleSheetsClient GoogleSheetsClient;
     private static ulong ChannelToJoinId = 1344347126330560625;
     private static Timer Timer;
+    private static AiClient AiClient = new();
 
+    
     public static async Task Main()
     {
         var discordConfig = new DiscordSocketConfig
@@ -130,7 +132,13 @@ public class Program
         {
             await MonitorDroptimizers(message);
         }
-        // Application messages
+        if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
+        {
+            var response = await AiClient.GetResponse($"Someone just messaged you \"{message.Content}\" act faero in your reply", 1);
+            var mentioningUser = message.Author;
+
+            await message.Channel.SendMessageAsync($"{mentioningUser.Mention} {response}");
+        }
 
     }
 
