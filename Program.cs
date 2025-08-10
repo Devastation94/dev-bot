@@ -134,6 +134,8 @@ public class Program
         }
         if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
         {
+            var hasRole = ((SocketGuildUser)message.Author).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name));
+
             var response = await AiClient.GetResponse(message.Content, 1);
             var mentioningUser = message.Author;
 
