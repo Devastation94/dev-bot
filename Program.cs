@@ -18,7 +18,7 @@ public class Program
     private static GoogleSheetsClient GoogleSheetsClient;
     private static ulong ChannelToJoinId = 1344347126330560625;
     private static Timer Timer;
-    private static AiClient AiClient = new();
+    private static AiClient AiClient;
 
     
     public static async Task Main()
@@ -30,6 +30,7 @@ public class Program
         DiscordBotClient = new DiscordSocketClient(discordConfig);
         AppSettings.Initialize();
         GoogleSheetsClient = new GoogleSheetsClient();
+        AiClient = new();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
         // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
@@ -132,7 +133,7 @@ public class Program
         {
             await MonitorDroptimizers(message);
         }
-        if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
+        if (message.Channel.Name.ToUpper() == "BOT-SPAM" && message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
         {
             var hasRole = ((SocketGuildUser)message.Author).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name.ToUpper()));
             var mentioningUser = message.Author;
