@@ -133,15 +133,19 @@ public class Program
         {
             await MonitorDroptimizers(message);
         }
-        if (message.Channel.Name.ToUpper() == "BOT-SPAM" && message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
+        if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
         {
             var hasRole = ((SocketGuildUser)message.Author).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name.ToUpper()));
             var mentioningUser = message.Author;
 
             if (!hasRole)
             {
-                await message.Channel.SendMessageAsync($"You lack the power to control me {mentioningUser.Mention}");
-
+                await message.Channel.SendMessageAsync($"You lack the power to control me {mentioningUser.Mention} :pig:");
+                return;
+            }
+            else if (message.Channel.Name.ToUpper() != "BOT-SPAM")
+            {
+                await message.Channel.SendMessageAsync($"If you want me to reply using skynet then message me in #bot-spam :pig:");
                 return;
             }
 
