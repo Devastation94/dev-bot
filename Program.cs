@@ -329,7 +329,7 @@ public class Program
            
             else
             {
-                await Task.Delay(TimeSpan.FromMinutes(1)); // Check again in a minute
+                await Task.Delay(TimeSpan.FromSeconds(5)); // Check again in a minute
             }
         }
     }
