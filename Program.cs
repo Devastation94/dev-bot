@@ -2,6 +2,7 @@
 using dev_library.Clients;
 using dev_library.Data;
 using dev_library.Data.WoW.Raidbots;
+using dev_refined;
 using dev_refined.Clients;
 using dev_refined.Data;
 using Discord;
@@ -15,6 +16,7 @@ public class Program
     private static DiscordSocketClient DiscordBotClient;
     private static WoWAuditClient WoWAuditClient = new();
     private static RaidBotsClient RaidBotsClient = new();
+    private static RealmClient RealmClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
     private static ulong ChannelToJoinId = 1344347126330560625;
     private static Timer Timer;
@@ -33,24 +35,17 @@ public class Program
         AiClient = new();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
-        // DiscordBotClient.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
         await DiscordBotClient.StartAsync();
         DiscordBotClient.Ready += OnReady;
-
-        //await ReplyToSpecificMessage(840082901890629644, 1340060583533346908, "https://tenor.com/view/who-cares-gif-24186436");
-
-        //Thread.Sleep(5000);
-
-        //await GoogleSheetsClient.UpdateSheet(await RaidBotsClient.GetItemUpgrades(""));
 
         await Task.Delay(-1);
     }
 
     private static async Task OnReady()
     {
-       CheckScheduleLoop();
+       await ScheduleCheck();
     }
 
     private static Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
@@ -313,12 +308,13 @@ public class Program
         return process;
     }
 
-    private static async Task CheckScheduleLoop()
+    private static async Task ScheduleCheck()
     {
         var eastern = TZConvert.GetTimeZoneInfo("Eastern Standard Time");
 
         while (true)
         {
+            var serverStatus = await RealmClient.GetServerAvailibility();
             var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
             if (now.DayOfWeek == DayOfWeek.Tuesday && now.Hour == 17 && now.Minute == 00)
             {
@@ -330,6 +326,7 @@ public class Program
 
                 await Task.Delay(TimeSpan.FromMinutes(61)); // Skip past this hour
             }
+           
             else
             {
                 await Task.Delay(TimeSpan.FromMinutes(1)); // Check again in a minute
