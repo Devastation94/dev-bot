@@ -210,15 +210,12 @@ public class Program
                         uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
                     }
 
-                    if (!string.IsNullOrWhiteSpace(errors))
-                    {
-                        await message.AddReactionAsync(new Emoji("✅"));
-                    }
-                    else
-                    {
-                        await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
-                        await message.DeleteAsync();
-                    }
+                    
+                    await message.AddReactionAsync(new Emoji("✅"));
+                   
+                     //   await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
+                       // await message.DeleteAsync();
+                    
 
                     if (message.Author.Id == 285277811348996097)
                     {
