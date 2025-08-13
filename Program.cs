@@ -206,7 +206,7 @@ public class Program
                         uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
                     }
 
-                    if (string.IsNullOrWhiteSpace(errors) || uploadedToGoogleSheets)
+                    if (!string.IsNullOrWhiteSpace(errors))
                     {
                         await message.AddReactionAsync(new Emoji("✅"));
                     }
