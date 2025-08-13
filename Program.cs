@@ -184,6 +184,7 @@ public class Program
                     foreach (var raidBotsUrl in raidBotsUrls)
                     {
                         Console.WriteLine($"Processing {raidBotsUrl}");
+                        var currentItemUpgrades = new List<ItemUpgrade>();
 
                         var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
                         validWoWAuditReport = bool.Parse(response.Created);
@@ -194,7 +195,7 @@ public class Program
 
                         validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
 
-                        if (wowAudit.Guild == "REFINED" && (validGoogleSheetsReport && !Constants.ERROR_MESSAGES.Any(em => errors.Contains(em))))
+                        if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport)
                         {
                             itemUpgrades = await RaidBotsClient.GetItemUpgrades(itemUpgrades, raidBotsUrl.Split('/').Last());
                         }
