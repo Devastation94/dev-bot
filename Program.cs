@@ -188,9 +188,13 @@ public class Program
 
                         var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
                         validWoWAuditReport = bool.Parse(response.Created);
-                        if (response.Base != null)
+                        
+                        if (!validWoWAuditReport)
                         {
                             errors += response.Base[0];
+                            await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
+                            await message.DeleteAsync();
+                            return;
                         }
 
                         validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
