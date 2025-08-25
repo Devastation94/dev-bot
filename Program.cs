@@ -4,7 +4,6 @@ using dev_library.Data;
 using dev_library.Data.WoW.Raidbots;
 using dev_refined;
 using dev_refined.Clients;
-using dev_refined.Data;
 using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
@@ -21,8 +20,9 @@ public class Program
     private static ulong ChannelToJoinId = 1344347126330560625;
     private static Timer Timer;
     private static AiClient AiClient;
+    private static BattleNetClient BattleNetClient = new();
+    private static RefinedClient RefinedClient = new();
 
-    
     public static async Task Main()
     {
         var discordConfig = new DiscordSocketConfig
@@ -45,7 +45,7 @@ public class Program
 
     private static async Task OnReady()
     {
-       await ScheduleCheck();
+        await ScheduleCheck();
     }
 
     private static Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
@@ -188,7 +188,7 @@ public class Program
 
                         var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
                         validWoWAuditReport = bool.Parse(response.Created);
-                        
+
                         if (!validWoWAuditReport)
                         {
                             errors += response.Base[0];
@@ -210,12 +210,12 @@ public class Program
                         uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
                     }
 
-                    
+
                     await message.AddReactionAsync(new Emoji("✅"));
-                   
-                     //   await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
-                       // await message.DeleteAsync();
-                    
+
+                    //   await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
+                    // await message.DeleteAsync();
+
 
                     if (message.Author.Id == 285277811348996097)
                     {
@@ -289,7 +289,7 @@ public class Program
     }
 
     private static Process CreateStream(string filePath)
-    { 
+    {
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -317,6 +317,8 @@ public class Program
         while (true)
         {
             var serverStatus = await RealmClient.GetServerAvailibility();
+           // var realms = await BattleNetClient.GetRealms();
+            //await BattleNetClient.GetAuctions(realms);
             var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
             if (now.DayOfWeek == DayOfWeek.Tuesday && now.Hour == 17 && now.Minute == 00)
             {
@@ -326,12 +328,16 @@ public class Program
                     await channel.SendMessageAsync("@here Make sure to post droptimizers or you're not getting loot");
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(61)); // Skip past this hour
+                await Task.Delay(TimeSpan.FromSeconds(61));
             }
-           
+            else if (AppSettings.KeyAudit && (now.DayOfWeek == DayOfWeek.Friday && now.Hour == 20 && now.Minute == 0 || now.DayOfWeek == DayOfWeek.Monday && now.Hour == 17 && now.Minute == 0))
+            {
+                await RefinedClient.PostBadPlayers();
+                await Task.Delay(TimeSpan.FromMinutes(61));
+            }
             else
             {
-                await Task.Delay(TimeSpan.FromSeconds(5)); // Check again in a minute
+                await Task.Delay(TimeSpan.FromSeconds(5));
             }
         }
     }
