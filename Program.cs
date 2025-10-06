@@ -128,7 +128,7 @@ public class Program
         {
             await MonitorDroptimizers(message);
         }
-        if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
+        else if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
         {
             var hasRole = ((SocketGuildUser)message.Author).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name.ToUpper()));
             var mentioningUser = message.Author;
@@ -148,7 +148,10 @@ public class Program
 
             await message.Channel.SendMessageAsync($"{response}");
         }
+        else if (message.Channel.Id == 1405315545179619428)
+        {
 
+        }
     }
 
     public static async Task MonitorApplications(SocketUserMessage message)
