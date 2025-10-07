@@ -319,7 +319,7 @@ public class Program
 
         while (true)
         {
-            var serverStatus = await RealmClient.GetServerAvailibility();
+           await RealmClient.PostServerAvailability();
            // var realms = await BattleNetClient.GetRealms();
             //await BattleNetClient.GetAuctions(realms);
             var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
