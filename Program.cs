@@ -1,4 +1,4 @@
-﻿
+
 using dev_library.Clients;
 using dev_library.Data;
 using dev_library.Data.WoW.Raidbots;
@@ -35,12 +35,23 @@ public class Program
         AiClient = new();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
+        DiscordBotClient.UserUpdated += OnUserUpdatedAsync;
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
         await DiscordBotClient.StartAsync();
         DiscordBotClient.Ready += OnReady;
 
         await Task.Delay(-1);
+    }
+
+    private static async Task OnUserUpdatedAsync(SocketUser before, SocketUser after)
+    {
+        if (before.Id == 496045399321083915 && after.Id == 496045399321083915 && (before?.AvatarId ?? null) != (after?.AvatarId ?? null))
+        {
+            var channel = DiscordBotClient.GetChannel(840082901890629644) as IMessageChannel;
+
+            await channel.SendMessageAsync("<@496045399321083915> :eyes:");
+        }
     }
 
     private static async Task OnReady()
