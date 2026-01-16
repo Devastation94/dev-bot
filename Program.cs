@@ -27,7 +27,9 @@ public class Program
     {
         var discordConfig = new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.Guilds |
+        GatewayIntents.GuildMembers,
+            AlwaysDownloadUsers = true
         };
         DiscordBotClient = new DiscordSocketClient(discordConfig);
         AppSettings.Initialize();
@@ -35,7 +37,7 @@ public class Program
         AiClient = new();
         DiscordBotClient.Log += Log;
         DiscordBotClient.MessageReceived += MonitorMessages;
-        DiscordBotClient.UserUpdated += OnUserUpdatedAsync;
+        DiscordBotClient.GuildMemberUpdated += OnGuildMemberUpdatedAsync;
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
         await DiscordBotClient.StartAsync();
@@ -44,12 +46,19 @@ public class Program
         await Task.Delay(-1);
     }
 
-    private static async Task OnUserUpdatedAsync(SocketUser before, SocketUser after)
+    private static async Task OnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
     {
-        if (before.Id == 496045399321083915 && after.Id == 496045399321083915 && (before?.AvatarId ?? null) != (after?.AvatarId ?? null))
+        if (before.Id != 496045399321083915)
+        {
+            return;
+        }
+
+        var beforeUser = await before.GetOrDownloadAsync();
+
+        if (beforeUser.AvatarId != after.AvatarId) 
         {
             var channel = DiscordBotClient.GetChannel(840082901890629644) as IMessageChannel;
-
+            Console.WriteLine("She did it!");
             await channel.SendMessageAsync("<@496045399321083915> :eyes:");
         }
     }
