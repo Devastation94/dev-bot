@@ -13,54 +13,35 @@ using TimeZoneConverter;
 public class Program
 {
     private static DiscordSocketClient DiscordBotClient;
-    private static WoWAuditClient WoWAuditClient = new();
-    private static RaidBotsClient RaidBotsClient = new();
-    private static RealmClient RealmClient = new();
+    private static readonly WoWAuditClient WoWAuditClient = new();
+    private static readonly RaidBotsClient RaidBotsClient = new();
+    private static readonly RealmClient RealmClient = new();
+    private static readonly RefinedClient RefinedClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
-    private static ulong ChannelToJoinId = 1344347126330560625;
-    private static Timer Timer;
     private static AiClient AiClient;
-    private static BattleNetClient BattleNetClient = new();
-    private static RefinedClient RefinedClient = new();
 
     public static async Task Main()
     {
         var discordConfig = new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.Guilds |
-        GatewayIntents.GuildMembers,
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.Guilds | GatewayIntents.GuildMembers,
             AlwaysDownloadUsers = true
         };
-        DiscordBotClient = new DiscordSocketClient(discordConfig);
+
         AppSettings.Initialize();
         GoogleSheetsClient = new GoogleSheetsClient();
         AiClient = new();
+
+        DiscordBotClient = new DiscordSocketClient(discordConfig);
         DiscordBotClient.Log += Log;
+        DiscordBotClient.Ready += OnReady;
         DiscordBotClient.MessageReceived += MonitorMessages;
         DiscordBotClient.GuildMemberUpdated += OnGuildMemberUpdatedAsync;
 
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
         await DiscordBotClient.StartAsync();
-        DiscordBotClient.Ready += OnReady;
 
         await Task.Delay(-1);
-    }
-
-    private static async Task OnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
-    {
-        if (before.Id != 496045399321083915)
-        {
-            return;
-        }
-
-        var beforeUser = await before.GetOrDownloadAsync();
-
-        if (beforeUser.AvatarId != after.AvatarId) 
-        {
-            var channel = DiscordBotClient.GetChannel(840082901890629644) as IMessageChannel;
-            Console.WriteLine("She did it!");
-            await channel.SendMessageAsync("<@496045399321083915> :eyes:");
-        }
     }
 
     private static async Task OnReady()
@@ -68,204 +49,133 @@ public class Program
         await ScheduleCheck();
     }
 
-    private static Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
+    private static async Task OnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
     {
-        _ = Task.Run(async () =>
-        {
-            await HandleUserVoiceStateUpdated(user, before, after);
-        });
+        if (before.Id != 496045399321083915) return;
 
-        return Task.CompletedTask;
+        var beforeUser = await before.GetOrDownloadAsync();
+        if (beforeUser.AvatarId == after.AvatarId) return;
+
+        var channel = DiscordBotClient.GetChannel(840082901890629644) as IMessageChannel;
+        Console.WriteLine("She did it!");
+        await SendMessageAsync(channel, "<@496045399321083915> :eyes:");
     }
-
-    private static async Task HandleUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
-    {
-        if (user.Id != AppSettings.Discord.UserId || before.VoiceChannel != after.VoiceChannel) return;
-
-        var guildUser = user as SocketGuildUser;
-        if (guildUser == null)
-        {
-            Console.WriteLine("User is not a guild member.");
-            return;
-        }
-
-        var channel = guildUser.VoiceChannel;
-        if (channel == null)
-        {
-            Console.WriteLine("User left all voice channels.");
-            return;
-        }
-
-        var botUser = channel.Guild.CurrentUser;
-        var existingConnection = botUser.VoiceChannel;
-
-        if (existingConnection != null)
-        {
-            Console.WriteLine($"Bot is already in {existingConnection.Name}, disconnecting first.");
-            await existingConnection.DisconnectAsync();
-            await Task.Delay(1000); // Ensure disconnection completes
-        }
-
-        try
-        {
-            var audioClient = await channel.ConnectAsync();
-            Console.WriteLine($"Joined voice channel: {channel.Name}");
-
-            await PlaySound(audioClient, $"{AppSettings.BasePath}/obama-tony.mp3");
-
-            await audioClient.StopAsync();
-            Console.WriteLine("Disconnected from voice channel.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error connecting to voice: {ex.Message}");
-        }
-    }
-
-
-    //public static async Task JoinAndLeaveVoiceChannel(ulong channelId)
-    //{
-    //    var channel = DiscordBotClient.GetChannel(channelId) as SocketVoiceChannel;
-    //    if (channel == null)
-    //    {
-    //        Console.WriteLine("Voice channel not found.");
-    //        return;
-    //    }
-
-    //    var audioClient = await channel.ConnectAsync(); // Join the voice channel
-    //    Console.WriteLine($"Joined voice channel: {channel.Name}");
-
-    //    await PlaySound(audioClient);
-
-    //    await audioClient.StopAsync(); // Proper way to leave
-    //    Console.WriteLine("Disconnected from voice channel.");
-    //}
 
     public static async Task MonitorMessages(SocketMessage message)
     {
-        // Raidbots messages
-        if (AppSettings.WowAudit.Any(wa => wa.ChannelId == message.Channel.Id))
+        if (message.Author.IsBot) return;
+
+        if (AppSettings.WowAudit.Any(wa => wa.ChannelIds.Contains(message.Channel.Id)))
         {
             await MonitorDroptimizers(message);
         }
         else if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
         {
-            var hasRole = ((SocketGuildUser)message.Author).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name.ToUpper()));
             var mentioningUser = message.Author;
+            var hasRole = ((SocketGuildUser)mentioningUser).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name.ToUpper()));
 
             if (!hasRole)
             {
-                await message.Channel.SendMessageAsync($"You lack the power to control me {mentioningUser.Mention} :pig:");
+                await SendMessageAsync(message.Channel, $"You lack the power to control me {mentioningUser.Mention} :pig:");
                 return;
             }
-            else if (message.Channel.Name.ToUpper() != "BOT-SPAM")
+
+            if (message.Channel.Name.ToUpper() != "BOT-SPAM")
             {
-                await message.Channel.SendMessageAsync($"If you want me to reply using skynet then message me in #bot-spam :pig:");
+                await SendMessageAsync(message.Channel, $"If you want me to reply using skynet then message me in #bot-spam :pig:");
                 return;
             }
 
             var response = await AiClient.GetResponse($"{mentioningUser.Mention} said {message.Content}", 1);
-
-            await message.Channel.SendMessageAsync($"{response}");
-        }
-        else if (message.Channel.Id == 1405315545179619428)
-        {
-
-        }
-    }
-
-    public static async Task MonitorApplications(SocketUserMessage message)
-    {
-        var guild = ((SocketGuildChannel)message.Channel).Guild;
-
-        if (message.Author.IsBot)
-        {
-            var test = await guild.CreateTextChannelAsync("reserved/test");
+            await SendMessageAsync(message.Channel, response);
         }
     }
 
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
         var raidBotsUrls = Helpers.ExtractUrls(message.Content);
-        var wowAudit = AppSettings.WowAudit.First(wa => wa.ChannelId == message.Channel.Id);
+        var wowAudit = AppSettings.WowAudit.First(wa => wa.ChannelIds.Contains(message.Channel.Id));
 
-        if (!message.Author.IsBot)
+        if (raidBotsUrls.Count == 0)
         {
-            var validWoWAuditReport = false;
-            var validGoogleSheetsReport = false;
-            var uploadedToGoogleSheets = false;
-            var errors = string.Empty;
-
-            if (raidBotsUrls.Count > 0)
+            if (!((SocketGuildUser)message.Author).GuildPermissions.Administrator)
             {
-                Console.WriteLine($"Begin Processing reports");
-
-                try
-                {
-                    var itemUpgrades = new List<ItemUpgrade>();
-
-                    foreach (var raidBotsUrl in raidBotsUrls)
-                    {
-                        Console.WriteLine($"Processing {raidBotsUrl}");
-                        var currentItemUpgrades = new List<ItemUpgrade>();
-
-                        var response = await WoWAuditClient.UpdateWishlist(raidBotsUrl.Split('/').Last(), wowAudit.Guild);
-                        validWoWAuditReport = bool.Parse(response.Created);
-
-                        if (!validWoWAuditReport)
-                        {
-                            errors += response.Base[0];
-                            await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
-                            await message.DeleteAsync();
-                            return;
-                        }
-
-                        validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
-
-                        if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport)
-                        {
-                            itemUpgrades = await RaidBotsClient.GetItemUpgrades(itemUpgrades, raidBotsUrl.Split('/').Last());
-                        }
-                    }
-
-                    if (itemUpgrades.Count > 0)
-                    {
-                        uploadedToGoogleSheets = await GoogleSheetsClient.UpdateSheet(itemUpgrades);
-                    }
-
-
-                    await message.AddReactionAsync(new Emoji("✅"));
-
-                    //   await message.Author.SendMessageAsync($"You did not send a valid droptimizer {errors}");
-                    // await message.DeleteAsync();
-
-
-                    if (message.Author.Id == 285277811348996097)
-                    {
-                        await message.Author.SendMessageAsync("Pig");
-                    }
-                    else if (message.Author.Id == 221473784174084097)
-                    {
-                        await message.Author.SendMessageAsync("Oink for me Piggie");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await message.AddReactionAsync(new Emoji("❌"));
-                    await message.Author.SendMessageAsync("WoWAudit is currently down. Please try again later. Also compliment epic on his tuna can");
-                    Console.WriteLine(ex.Message);
-                    throw;
-                }
+                Console.WriteLine(message.Content);
+                await DeleteAsync(message);
             }
-            else
-            {
-                if (!((SocketGuildUser)message.Author).GuildPermissions.Administrator)
-                {
-                    Console.WriteLine(message.Content);
-                    await message.DeleteAsync();
-                }
-            }
+            return;
         }
+
+        Console.WriteLine("Begin Processing reports");
+
+        try
+        {
+            var itemUpgrades = new List<ItemUpgrade>();
+
+            foreach (var raidBotsUrl in raidBotsUrls)
+            {
+                var reportId = raidBotsUrl.Split('/').Last();
+                Console.WriteLine($"Processing {raidBotsUrl}");
+
+                var response = await WoWAuditClient.UpdateWishlist(reportId, wowAudit.Guild);
+
+                if (!bool.Parse(response.Created))
+                {
+                    await SendDmAsync(message.Author, $"You did not send a valid droptimizer {response.Base[0]}");
+                    await DeleteAsync(message);
+                    return;
+                }
+
+                var validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
+                if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport)
+                {
+                    itemUpgrades = await RaidBotsClient.GetItemUpgrades(itemUpgrades, reportId);
+                }
+            }
+
+            if (itemUpgrades.Count > 0)
+                await GoogleSheetsClient.UpdateSheet(itemUpgrades);
+
+            await ReactAsync(message, new Emoji("✅"));
+
+            if (message.Author.Id == 285277811348996097)
+                await SendDmAsync(message.Author, "Pig");
+            else if (message.Author.Id == 221473784174084097)
+                await SendDmAsync(message.Author, "Oink for me Piggie");
+        }
+        catch (Exception ex)
+        {
+            await ReactAsync(message, new Emoji("❌"));
+            await SendDmAsync(message.Author, "WoWAudit is currently down. Please try again later. Also compliment epic on his tuna can");
+            Console.WriteLine(ex.Message);
+            throw;
+        }
+    }
+
+    // Dry-run aware Discord helpers
+    private static async Task SendMessageAsync(IMessageChannel channel, string content)
+    {
+        if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] Send to #{channel.Name}: {content}");
+        var allowedMentions = AppSettings.DryRun ? AllowedMentions.None : AllowedMentions.All;
+        await channel.SendMessageAsync(content, allowedMentions: allowedMentions);
+    }
+
+    private static async Task SendDmAsync(IUser user, string content)
+    {
+        if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] DM to {user.Username}: {content}");
+        else await user.SendMessageAsync(content);
+    }
+
+    private static async Task ReactAsync(IMessage message, IEmote emote)
+    {
+        if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] React {emote.Name} on message {message.Id}");
+        else await message.AddReactionAsync(emote);
+    }
+
+    private static async Task DeleteAsync(IMessage message)
+    {
+        if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] Delete message {message.Id} from {message.Author.Username}");
+        else await message.DeleteAsync();
     }
 
     private static Task Log(LogMessage msg)
@@ -277,37 +187,30 @@ public class Program
     public static async Task ReplyToSpecificMessage(ulong channelId, ulong messageId, string replyContent)
     {
         var channel = await DiscordBotClient.GetChannelAsync(channelId) as SocketTextChannel;
-        // Fetch the message by ID
         var message = await channel.GetMessageAsync(messageId) as IUserMessage;
 
-        if (message != null)
-        {
-            // Create a message reference to reply to the specific message
-            var reference = new MessageReference(message.Id);
-
-            // Reply to the message with the specified content
-            await channel.SendMessageAsync(text: replyContent, messageReference: reference);
-        }
-        else
+        if (message == null)
         {
             Console.WriteLine("Message not found!");
+            return;
         }
+
+        await channel.SendMessageAsync(text: replyContent, messageReference: new MessageReference(message.Id));
     }
 
     private static async Task PlaySound(IAudioClient client, string filePath)
     {
-        using (var ffmpeg = CreateStream(filePath))
-        using (var output = ffmpeg.StandardOutput.BaseStream)
-        using (var discord = client.CreatePCMStream(AudioApplication.Voice))
+        using var ffmpeg = CreateStream(filePath);
+        using var output = ffmpeg.StandardOutput.BaseStream;
+        using var discord = client.CreatePCMStream(AudioApplication.Voice);
+
+        try
         {
-            try
-            {
-                await output.CopyToAsync(discord);
-            }
-            finally
-            {
-                await discord.FlushAsync();
-            }
+            await output.CopyToAsync(discord);
+        }
+        finally
+        {
+            await discord.FlushAsync();
         }
     }
 
@@ -339,28 +242,45 @@ public class Program
 
         while (true)
         {
-           await RealmClient.PostServerAvailability();
-           // var realms = await BattleNetClient.GetRealms();
-            //await BattleNetClient.GetAuctions(realms);
             var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
-            if (now.DayOfWeek == DayOfWeek.Tuesday && now.Hour == 17 && now.Minute == 00)
-            {
-                var channel = DiscordBotClient.GetChannel(1339754498549219329) as IMessageChannel;
-                if (channel != null)
-                {
-                    await channel.SendMessageAsync("@here Make sure to post droptimizers or you're not getting loot");
-                }
 
-                await Task.Delay(TimeSpan.FromSeconds(61));
-            }
-            else if (AppSettings.KeyAudit && (now.DayOfWeek == DayOfWeek.Friday && now.Hour == 20 && now.Minute == 0 || now.DayOfWeek == DayOfWeek.Monday && now.Hour == 17 && now.Minute == 0))
+            await RealmClient.PostServerAvailability();
+
+            if (now.DayOfWeek == DayOfWeek.Tuesday && now.Hour == 17 && now.Minute == 0)
             {
-                await RefinedClient.PostBadPlayers();
-                await Task.Delay(TimeSpan.FromMinutes(61));
+                await SendDroptimizerReminders();
             }
-            else
+            else if (AppSettings.KeyAudit && IsKeyAuditTime(now) && AppSettings.WowAudit.Any(wa => IsWowAuditActive(wa, now)))
             {
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                if (AppSettings.DryRun) Console.WriteLine("[DRY RUN] PostBadPlayers");
+                else await RefinedClient.PostBadPlayers();
+            }
+
+            // Sleep until the start of the next minute
+            var delayUntilNextMinute = TimeSpan.FromSeconds(60 - now.Second);
+            await Task.Delay(delayUntilNextMinute);
+        }
+    }
+
+    private static bool IsKeyAuditTime(DateTime now) =>
+        (now.DayOfWeek == DayOfWeek.Friday && now.Hour == 20 && now.Minute == 0) ||
+        (now.DayOfWeek == DayOfWeek.Monday && now.Hour == 17 && now.Minute == 0);
+
+    private static bool IsWowAuditActive(WowAuditSettings wowAudit, DateTime now) =>
+        (!wowAudit.StartDate.HasValue || now >= wowAudit.StartDate.Value) &&
+        (!wowAudit.EndDate.HasValue || now <= wowAudit.EndDate.Value);
+
+    private static async Task SendDroptimizerReminders()
+    {
+        var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, TZConvert.GetTimeZoneInfo("Eastern Standard Time"));
+
+        foreach (var wowAudit in AppSettings.WowAudit.Where(wa => IsWowAuditActive(wa, now)))
+        {
+            foreach (var channelId in wowAudit.ChannelIds)
+            {
+                var channel = DiscordBotClient.GetChannel(channelId) as IMessageChannel;
+                if (channel != null)
+                    await SendMessageAsync(channel, "@here Make sure to post droptimizers or you're not getting loot");
             }
         }
     }
