@@ -244,7 +244,14 @@ public class Program
         {
             var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
 
-            await RealmClient.PostServerAvailability();
+            try
+            {
+                await RealmClient.PostServerAvailability();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"PostServerAvailability failed: {ex.Message}");
+            }
 
             if (now.DayOfWeek == DayOfWeek.Tuesday && now.Hour == 17 && now.Minute == 0)
             {
