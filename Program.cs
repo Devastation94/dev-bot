@@ -242,8 +242,6 @@ public class Program
 
         while (true)
         {
-            var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
-
             try
             {
                 await RealmClient.PostServerAvailability();
@@ -252,6 +250,8 @@ public class Program
             {
                 Console.WriteLine($"PostServerAvailability failed: {ex.Message}");
             }
+
+            var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, eastern);
 
             if (now.DayOfWeek == DayOfWeek.Tuesday && now.Hour == 17 && now.Minute == 0)
             {
