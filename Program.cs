@@ -65,7 +65,8 @@ public class Program
     {
         if (message.Author.IsBot) return;
 
-        if (AppSettings.WowAudit.Any(wa => wa.ChannelIds.Contains(message.Channel.Id)))
+        var matchedWowAudit = AppSettings.WowAudit.FirstOrDefault(wa => wa.ChannelIds.Contains(message.Channel.Id));
+        if (matchedWowAudit != null && !matchedWowAudit.ReminderOnly)
         {
             await MonitorDroptimizers(message);
         }
@@ -169,7 +170,17 @@ public class Program
     private static async Task ReactAsync(IMessage message, IEmote emote)
     {
         if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] React {emote.Name} on message {message.Id}");
-        else await message.AddReactionAsync(emote);
+        else
+        {
+            try
+            {
+                await message.AddReactionAsync(emote);
+            }
+            catch (Discord.Net.HttpException ex) when ((int)ex.HttpCode == 403)
+            {
+                await SendMessageAsync(message.Channel, $"{emote.Name}");
+            }
+        }
     }
 
     private static async Task DeleteAsync(IMessage message)
