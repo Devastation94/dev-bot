@@ -303,7 +303,7 @@ public class Program
             {
                 var channel = DiscordBotClient.GetChannel(channelId) as IMessageChannel;
                 if (channel != null)
-                    await SendMessageAsync(channel, "@here Make sure to post droptimizers or you're not getting loot");
+                    await SendMessageAsync(channel, "<@&933379677094031460> <@&933380098650959903> Make sure to post droptimizers or you're not getting loot");
             }
         }
     }
