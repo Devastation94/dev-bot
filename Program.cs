@@ -18,7 +18,7 @@ public class Program
     private static readonly RealmClient RealmClient = new();
     private static readonly RefinedClient RefinedClient = new();
     private static GoogleSheetsClient GoogleSheetsClient;
-    private static AiClient AiClient;
+    // private static AiClient AiClient;
 
     public static async Task Main()
     {
@@ -31,7 +31,7 @@ public class Program
 
         AppSettings.Initialize();
         GoogleSheetsClient = new GoogleSheetsClient();
-        AiClient = new();
+        // AiClient = new();
 
         DiscordBotClient = new DiscordSocketClient(discordConfig);
         DiscordBotClient.Log += Log;
@@ -85,26 +85,26 @@ public class Program
         {
             await MonitorDroptimizers(message);
         }
-        else if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
-        {
-            var mentioningUser = message.Author;
-            var hasRole = ((SocketGuildUser)mentioningUser).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name.ToUpper()));
-
-            if (!hasRole)
-            {
-                await SendMessageAsync(message.Channel, $"You lack the power to control me {mentioningUser.Mention} :pig:");
-                return;
-            }
-
-            if (message.Channel.Name.ToUpper() != "BOT-SPAM")
-            {
-                await SendMessageAsync(message.Channel, $"If you want me to reply using skynet then message me in #bot-spam :pig:");
-                return;
-            }
-
-            var response = await AiClient.GetResponse($"{mentioningUser.Mention} said {message.Content}", 1);
-            await SendMessageAsync(message.Channel, response);
-        }
+        // else if (message.MentionedUsers.Any(u => u.Username == "Refined Bot") && message.Author.Username != "Refined Bot")
+        // {
+        //     var mentioningUser = message.Author;
+        //     var hasRole = ((SocketGuildUser)mentioningUser).Roles.Any(r => AppSettings.GptSettings.AllowedRoles.Contains(r.Name.ToUpper()));
+        // 
+        //     if (!hasRole)
+        //     {
+        //         await SendMessageAsync(message.Channel, $"You lack the power to control me {mentioningUser.Mention} :pig:");
+        //         return;
+        //     }
+        // 
+        //     if (message.Channel.Name.ToUpper() != "BOT-SPAM")
+        //     {
+        //         await SendMessageAsync(message.Channel, $"If you want me to reply using skynet then message me in #bot-spam :pig:");
+        //         return;
+        //     }
+        // 
+        //     var response = await AiClient.GetResponse($"{mentioningUser.Mention} said {message.Content}", 1);
+        //     await SendMessageAsync(message.Channel, response);
+        // }
 
         Console.WriteLine("Program.MonitorMessages: END");
     }
