@@ -46,6 +46,13 @@ public class Program
 
     private static async Task OnReady()
     {
+        DiscordClient.SendMessageAsync = async (channelId, content) =>
+        {
+            var channel = DiscordBotClient.GetChannel(channelId) as IMessageChannel;
+            if (channel != null)
+                await channel.SendMessageAsync(content);
+        };
+
         await ScheduleCheck();
     }
 
@@ -68,8 +75,8 @@ public class Program
         if (message.Author.Id == 341726443295866893)
             await ReactAsync(message, new Emoji("🫃"));
 
-        var matchedWowAudit = AppSettings.WowAudit.FirstOrDefault(wa => wa.ChannelIds.Contains(message.Channel.Id));
-        if (matchedWowAudit != null && !matchedWowAudit.ReminderOnly)
+        var matchedGuild = AppSettings.Guilds.FirstOrDefault(g => g.Features.Droptimizer && g.Channels?.GetValueOrDefault("droptimizer") == message.Channel.Id);
+        if (matchedGuild != null)
         {
             await MonitorDroptimizers(message);
         }
@@ -98,7 +105,7 @@ public class Program
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
         var raidBotsUrls = Helpers.ExtractUrls(message.Content);
-        var wowAudit = AppSettings.WowAudit.First(wa => wa.ChannelIds.Contains(message.Channel.Id));
+        var guild = AppSettings.Guilds.First(g => g.Channels?.GetValueOrDefault("droptimizer") == message.Channel.Id);
 
         if (raidBotsUrls.Count == 0)
         {
@@ -121,7 +128,7 @@ public class Program
                 var reportId = raidBotsUrl.Split('/').Last();
                 Console.WriteLine($"Processing {raidBotsUrl}");
 
-                var response = await WoWAuditClient.UpdateWishlist(reportId, wowAudit.Guild);
+                var response = await WoWAuditClient.UpdateWishlist(reportId, guild.Name);
 
                 if (!bool.Parse(response.Created))
                 {
@@ -131,7 +138,7 @@ public class Program
                 }
 
                 var validGoogleSheetsReport = await RaidBotsClient.IsValidReport(raidBotsUrl);
-                if (wowAudit.Guild == "REFINED" && validGoogleSheetsReport)
+                if (guild.Name == "REFINED" && validGoogleSheetsReport)
                 {
                     itemUpgrades = await RaidBotsClient.GetItemUpgrades(itemUpgrades, reportId);
                 }
@@ -273,7 +280,7 @@ public class Program
             {
                 await SendDroptimizerReminders();
             }
-            else if (AppSettings.KeyAudit && IsKeyAuditTime(now) && AppSettings.WowAudit.Any(wa => IsWowAuditActive(wa, now)))
+            else if (IsKeyAuditTime(now) && AppSettings.Guilds.Any(g => g.Features.KeyAudit && IsGuildActive(g, now)))
             {
                 if (AppSettings.DryRun) Console.WriteLine("[DRY RUN] PostBadPlayers");
                 else await RefinedClient.PostBadPlayers();
@@ -289,21 +296,26 @@ public class Program
         (now.DayOfWeek == DayOfWeek.Friday && now.Hour == 20 && now.Minute == 0) ||
         (now.DayOfWeek == DayOfWeek.Monday && now.Hour == 17 && now.Minute == 0);
 
-    private static bool IsWowAuditActive(WowAuditSettings wowAudit, DateTime now) =>
-        (!wowAudit.StartDate.HasValue || now >= wowAudit.StartDate.Value) &&
-        (!wowAudit.EndDate.HasValue || now <= wowAudit.EndDate.Value);
+    private static bool IsGuildActive(GuildSettings guild, DateTime now) =>
+        (guild.Droptimizer?.StartDate == null || now >= guild.Droptimizer.StartDate.Value) &&
+        (guild.Droptimizer?.EndDate == null || now <= guild.Droptimizer.EndDate.Value);
 
     private static async Task SendDroptimizerReminders()
     {
         var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, TZConvert.GetTimeZoneInfo("Eastern Standard Time"));
 
-        foreach (var wowAudit in AppSettings.WowAudit.Where(wa => IsWowAuditActive(wa, now)))
+        foreach (var guild in AppSettings.Guilds.Where(g => g.Features.DroptimizerReminder && IsGuildActive(g, now)))
         {
-            foreach (var channelId in wowAudit.ChannelIds)
+            var roles = guild.RolesToPing?.Length > 0
+                ? string.Join(" ", guild.RolesToPing.Select(r => $"<@&{r}>")) + " "
+                : "";
+
+            var channelId = guild.Channels?.GetValueOrDefault("droptimizer") ?? 0;
+            if (channelId != 0)
             {
                 var channel = DiscordBotClient.GetChannel(channelId) as IMessageChannel;
                 if (channel != null)
-                    await SendMessageAsync(channel, "<@&933379677094031460> <@&933380098650959903> Make sure to post droptimizers or you're not getting loot");
+                    await SendMessageAsync(channel, $"{roles}Make sure to post droptimizers or you're not getting loot");
             }
         }
     }
