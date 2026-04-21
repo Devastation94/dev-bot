@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="dev-bot-tests\**" />
+    <Content Remove="dev-bot-tests\**" />
+    <EmbeddedResource Remove="dev-bot-tests\**" />
+    <None Remove="dev-bot-tests\**" />
     <None Remove="libopus.dll" />
     <None Remove="libsodium.dll" />
   </ItemGroup>
