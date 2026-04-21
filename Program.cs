@@ -22,6 +22,7 @@ public class Program
 
     public static async Task Main()
     {
+        Console.WriteLine("Program.Main: START");
         var discordConfig = new DiscordSocketConfig
         {
             GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent | GatewayIntents.Guilds | GatewayIntents.GuildMembers,
@@ -41,11 +42,13 @@ public class Program
         await DiscordBotClient.LoginAsync(TokenType.Bot, AppSettings.Discord.Token);
         await DiscordBotClient.StartAsync();
 
+        Console.WriteLine("Program.Main: END");
         await Task.Delay(-1);
     }
 
     private static async Task OnReady()
     {
+        Console.WriteLine("Program.OnReady: START");
         DiscordClient.SendMessageAsync = async (channelId, content) =>
         {
             var channel = DiscordBotClient.GetChannel(channelId) as IMessageChannel;
@@ -54,6 +57,7 @@ public class Program
         };
 
         await ScheduleCheck();
+        Console.WriteLine("Program.OnReady: END");
     }
 
     private static async Task OnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
@@ -70,6 +74,7 @@ public class Program
 
     public static async Task MonitorMessages(SocketMessage message)
     {
+        Console.WriteLine("Program.MonitorMessages: START");
         if (message.Author.IsBot) return;
 
         if (message.Author.Id == 341726443295866893)
@@ -100,10 +105,13 @@ public class Program
             var response = await AiClient.GetResponse($"{mentioningUser.Mention} said {message.Content}", 1);
             await SendMessageAsync(message.Channel, response);
         }
+
+        Console.WriteLine("Program.MonitorMessages: END");
     }
 
     public static async Task MonitorDroptimizers(SocketMessage message)
     {
+        Console.WriteLine("Program.MonitorDroptimizers: START");
         var raidBotsUrls = Helpers.ExtractUrls(message.Content);
         var guild = AppSettings.Guilds.First(g => g.Channels?.GetValueOrDefault("droptimizer") == message.Channel.Id);
 
@@ -114,10 +122,11 @@ public class Program
                 Console.WriteLine(message.Content);
                 await DeleteAsync(message);
             }
+            Console.WriteLine("Program.MonitorDroptimizers: END");
             return;
         }
 
-        Console.WriteLine("Begin Processing reports");
+        Console.WriteLine("Program.MonitorDroptimizers: processing reports");
 
         try
         {
@@ -155,12 +164,15 @@ public class Program
                 if (textChannel != null)
                     await textChannel.SendMessageAsync("https://tenor.com/view/bosnov-67-bosnov-67-67-meme-gif-16727368109953357722", messageReference: new MessageReference(message.Id));
             }
+
+            Console.WriteLine("Program.MonitorDroptimizers: END");
         }
         catch (Exception ex)
         {
             await ReactAsync(message, new Emoji("❌"));
             await SendDmAsync(message.Author, "WoWAudit is currently down. Please try again later. Also compliment epic on his tuna can");
             Console.WriteLine(ex.Message);
+            Console.WriteLine("Program.MonitorDroptimizers: END (exception)");
             throw;
         }
     }
@@ -168,19 +180,24 @@ public class Program
     // Dry-run aware Discord helpers
     private static async Task SendMessageAsync(IMessageChannel channel, string content)
     {
+        Console.WriteLine($"Program.SendMessageAsync: START #{channel.Name}");
         if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] Send to #{channel.Name}: {content}");
         var allowedMentions = AppSettings.DryRun ? AllowedMentions.None : AllowedMentions.All;
         await channel.SendMessageAsync(content, allowedMentions: allowedMentions);
+        Console.WriteLine($"Program.SendMessageAsync: END");
     }
 
     private static async Task SendDmAsync(IUser user, string content)
     {
+        Console.WriteLine($"Program.SendDmAsync: START {user.Username}");
         if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] DM to {user.Username}: {content}");
         else await user.SendMessageAsync(content);
+        Console.WriteLine($"Program.SendDmAsync: END");
     }
 
     private static async Task ReactAsync(IMessage message, IEmote emote)
     {
+        Console.WriteLine($"Program.ReactAsync: START {emote.Name}");
         if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] React {emote.Name} on message {message.Id}");
         else
         {
@@ -193,12 +210,15 @@ public class Program
                 Console.WriteLine($"[WARN] Missing permissions to react in #{message.Channel.Name}");
             }
         }
+        Console.WriteLine($"Program.ReactAsync: END");
     }
 
     private static async Task DeleteAsync(IMessage message)
     {
+        Console.WriteLine($"Program.DeleteAsync: START {message.Id}");
         if (AppSettings.DryRun) Console.WriteLine($"[DRY RUN] Delete message {message.Id} from {message.Author.Username}");
         else await message.DeleteAsync();
+        Console.WriteLine($"Program.DeleteAsync: END");
     }
 
     private static Task Log(LogMessage msg)
@@ -209,6 +229,7 @@ public class Program
 
     public static async Task ReplyToSpecificMessage(ulong channelId, ulong messageId, string replyContent)
     {
+        Console.WriteLine($"Program.ReplyToSpecificMessage: START {messageId}");
         var channel = await DiscordBotClient.GetChannelAsync(channelId) as SocketTextChannel;
         var message = await channel.GetMessageAsync(messageId) as IUserMessage;
 
@@ -219,10 +240,12 @@ public class Program
         }
 
         await channel.SendMessageAsync(text: replyContent, messageReference: new MessageReference(message.Id));
+        Console.WriteLine($"Program.ReplyToSpecificMessage: END");
     }
 
     private static async Task PlaySound(IAudioClient client, string filePath)
     {
+        Console.WriteLine($"Program.PlaySound: START {filePath}");
         using var ffmpeg = CreateStream(filePath);
         using var output = ffmpeg.StandardOutput.BaseStream;
         using var discord = client.CreatePCMStream(AudioApplication.Voice);
@@ -235,10 +258,12 @@ public class Program
         {
             await discord.FlushAsync();
         }
+        Console.WriteLine($"Program.PlaySound: END");
     }
 
     private static Process CreateStream(string filePath)
     {
+        Console.WriteLine($"Program.CreateStream: START {filePath}");
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -256,11 +281,13 @@ public class Program
         process.Start();
         process.BeginErrorReadLine();
 
+        Console.WriteLine($"Program.CreateStream: END");
         return process;
     }
 
     private static async Task ScheduleCheck()
     {
+        Console.WriteLine("Program.ScheduleCheck: START");
         var eastern = TZConvert.GetTimeZoneInfo("Eastern Standard Time");
 
         while (true)
@@ -302,6 +329,7 @@ public class Program
 
     private static async Task SendDroptimizerReminders()
     {
+        Console.WriteLine("Program.SendDroptimizerReminders: START");
         var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, TZConvert.GetTimeZoneInfo("Eastern Standard Time"));
 
         foreach (var guild in AppSettings.Guilds.Where(g => g.Features.DroptimizerReminder && IsGuildActive(g, now)))
@@ -318,5 +346,7 @@ public class Program
                     await SendMessageAsync(channel, $"{roles}Make sure to post droptimizers or you're not getting loot");
             }
         }
+
+        Console.WriteLine("Program.SendDroptimizerReminders: END");
     }
 }
