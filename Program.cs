@@ -139,10 +139,12 @@ public class Program
 
             await ReactAsync(message, new Emoji("✅"));
 
-            if (message.Author.Id == 285277811348996097)
-                await SendDmAsync(message.Author, "Pig");
-            else if (message.Author.Id == 221473784174084097)
-                await SendDmAsync(message.Author, "Oink for me Piggie");
+            if (message.Author.Id == 341726443295866893)
+            {
+                var textChannel = message.Channel as ITextChannel;
+                if (textChannel != null)
+                    await textChannel.SendMessageAsync("https://tenor.com/view/bosnov-67-bosnov-67-67-meme-gif-16727368109953357722", messageReference: new MessageReference(message.Id));
+            }
         }
         catch (Exception ex)
         {
