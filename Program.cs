@@ -51,14 +51,14 @@ public class Program
 
     private static async Task OnGuildMemberUpdatedAsync(Cacheable<SocketGuildUser, ulong> before, SocketGuildUser after)
     {
-        if (before.Id != 496045399321083915) return;
+        // if (before.Id != 496045399321083915) return;
 
-        var beforeUser = await before.GetOrDownloadAsync();
-        if (beforeUser.AvatarId == after.AvatarId) return;
+        // var beforeUser = await before.GetOrDownloadAsync();
+        // if (beforeUser.AvatarId == after.AvatarId) return;
 
-        var channel = DiscordBotClient.GetChannel(840082901890629644) as IMessageChannel;
-        Console.WriteLine("She did it!");
-        await SendMessageAsync(channel, "<@496045399321083915> :eyes:");
+        // var channel = DiscordBotClient.GetChannel(840082901890629644) as IMessageChannel;
+        // Console.WriteLine("She did it!");
+        // await SendMessageAsync(channel, "<@496045399321083915> :eyes:");
     }
 
     public static async Task MonitorMessages(SocketMessage message)
