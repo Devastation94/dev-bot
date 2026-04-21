@@ -65,6 +65,9 @@ public class Program
     {
         if (message.Author.IsBot) return;
 
+        if (message.Author.Id == 341726443295866893)
+            await ReactAsync(message, new Emoji("🫃"));
+
         var matchedWowAudit = AppSettings.WowAudit.FirstOrDefault(wa => wa.ChannelIds.Contains(message.Channel.Id));
         if (matchedWowAudit != null && !matchedWowAudit.ReminderOnly)
         {
