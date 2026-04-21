@@ -180,7 +180,7 @@ public class Program
             }
             catch (Discord.Net.HttpException ex) when ((int)ex.HttpCode == 403)
             {
-                await SendMessageAsync(message.Channel, $"{emote.Name}");
+                Console.WriteLine($"[WARN] Missing permissions to react in #{message.Channel.Name}");
             }
         }
     }
